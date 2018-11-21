@@ -1,0 +1,42 @@
+version: "3"
+services:
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    restart: always
+    ports:
+    - 80:3000
+    networks:
+    - grafana-net
+    volumes:
+    - grafana-volume
+
+  graphite:
+    image: graphiteapp/graphite-statsd
+    container_name: graphite
+    restart: always
+    networks:
+    - grafana-net
+    # ports:
+    # - "80:80"
+    # - "2003-2004:2003-2004"
+    # - "2023-2024:2023-2024"
+    # - "8125:8125/udp"
+    # - "8126:8126"
+
+  app:
+    image: ruby:2.5
+    container_name: app
+    networks:
+    - grafana-net
+    volumes:
+    - ./app:/var/app
+    working_dir: /var/app
+    command: "./entrypoint.sh"
+
+networks:
+  grafana-net:
+
+volumes:
+  grafana-volume:
+    external: true
