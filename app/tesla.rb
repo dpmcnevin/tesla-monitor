@@ -14,7 +14,7 @@ class Tesla
   attr_accessor :access_token, :refresh_token, :vehicle_id
 
   def initialize
-    @vehicle_id = '32600350078727683'
+    @vehicle_id = ENV['vehicle_id']
   end
 
   def vehicles; authenticated_call(method: :get, url: '/api/1/vehicles'); end
