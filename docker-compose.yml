@@ -4,8 +4,6 @@ services:
     image: grafana/grafana
     container_name: grafana
     restart: always
-    # ports:
-    # - 80:3000
     networks:
     - grafana-net
     volumes:
@@ -22,14 +20,14 @@ services:
     image: nginx:latest
     container_name: production_nginx
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - /etc/letsencrypt/:/etc/letsencrypt/
+    - ./nginx.conf:/etc/nginx/nginx.conf
+    - /etc/letsencrypt/:/etc/letsencrypt/
     networks:
-      - grafana-net
+    - grafana-net
     ports:
-      - 443:443
+    - 443:443
     depends_on:
-      - grafana
+    - grafana
 
   app:
     image: ruby:2.5
