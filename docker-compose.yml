@@ -28,6 +28,8 @@ services:
       - grafana-net
     ports:
       - 443:443
+    depends_on:
+      - grafana
 
   app:
     image: ruby:2.5
