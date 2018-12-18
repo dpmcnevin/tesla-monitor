@@ -1,9 +1,0 @@
-version: '3'
-
-services:
-  app:
-    build:
-      context: .
-    volumes:
-      - .:/var/app
-    command: mvn clean package exec:java -D exec.mainClass=net.corrupt.stats.Application
