@@ -1,4 +1,4 @@
-package net.corrupt.stats;
+package net.corrupt.stats.graphite;
 
 import org.json.JSONObject;
 
@@ -6,34 +6,37 @@ import java.io.IOException;
 import java.net.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class GraphiteClient implements AutoCloseable {
+    private static Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+
     private final JSONObject vehicleData;
 
     private DatagramSocket socket;
     private InetAddress address;
 
-    public GraphiteClient(JSONObject vehicleData) throws SocketException, UnknownHostException {
+    public GraphiteClient(String hostname, JSONObject vehicleData) throws SocketException, UnknownHostException {
         this.vehicleData = vehicleData;
 
         this.socket = new DatagramSocket();
-        this.address = InetAddress.getByName("graphite");
+        this.address = InetAddress.getByName(hostname);
     }
 
-    public static void sendStats(JSONObject data) {
-        try (GraphiteClient client = new GraphiteClient(data)) {
+    public static void sendStats(String hostname, JSONObject data) throws GraphiteClientException {
+        try (GraphiteClient client = new GraphiteClient(hostname, data)) {
             client.flattenVehicleData().forEach((s, o) -> {
                 String statsdData = String.format("tesla.%s:%s|%s", s, o, "g");
                 try {
                     client.sendStat(statsdData);
+                    LOGGER.log(Level.FINER, statsdData);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             });
-        } catch (SocketException e) {
-            e.printStackTrace();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
+        } catch (SocketException | UnknownHostException e) {
+            throw new GraphiteClientException(e.toString());
         }
     }
 

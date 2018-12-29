@@ -1,4 +1,4 @@
-package net.corrupt.stats;
+package net.corrupt.stats.tesla;
 
 import org.json.JSONObject;
 
@@ -8,8 +8,12 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class TeslaClient {
+    private static final Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+
     private final String BASE_URL = "https://owner-api.teslamotors.com";
     private final String CLIENT_ID = System.getenv("tesla_client_id");
     private final String CLIENT_SECRET = System.getenv("tesla_client_secret");
@@ -18,6 +22,8 @@ public class TeslaClient {
     private String vehicleId;
     private String username;
     private String password;
+
+    private Integer maxRetries = 5;
 
     private String accessToken;
 
@@ -33,7 +39,7 @@ public class TeslaClient {
                 .build();
     }
 
-    public JSONObject getVehicleData() {
+    public JSONObject getVehicleData() throws TeslaClientException {
         HttpRequest.Builder request = HttpRequest.newBuilder()
                 .uri(URI.create(String.format("%s/api/1/vehicles/%s/data", BASE_URL, this.vehicleId)))
                 .timeout(Duration.ofMinutes(2))
@@ -42,36 +48,41 @@ public class TeslaClient {
 
         HttpResponse<String> stringHttpResponse = authenticatedCallWithRetries(0, request);
 
-        System.out.println("stringHttpResponse = " + stringHttpResponse);
+        LOGGER.log(Level.INFO, "stringHttpResponse = " + stringHttpResponse);
 
         JSONObject jsonResponse = new JSONObject(stringHttpResponse.body());
 
         return jsonResponse;
     }
 
-    private HttpResponse<String> authenticatedCallWithRetries(Integer retry, HttpRequest.Builder requestBuilder) {
-        if (accessToken == null) {
-            try {
-                requestAccessToken();
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+    private Integer getMaxRetries() { return maxRetries; }
 
+    private HttpResponse<String> authenticatedCallWithRetries(Integer retry, HttpRequest.Builder requestBuilder) throws TeslaClientException {
         HttpResponse<String> response = null;
-        requestBuilder.header("Authorization", "Bearer " + getAccessToken());
 
         try {
+            if (accessToken == null) {
+                requestAccessToken();
+            }
+
+            response = null;
+            requestBuilder.header("Authorization", "Bearer " + getAccessToken());
+
             response = client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString());
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            if (retry < maxRetries) {
+                LOGGER.log(Level.INFO, String.format("Retry: %s, Error: %s", retry, e.getMessage()));
+                return authenticatedCallWithRetries(retry + 1, requestBuilder);
+            } else {
+                throw new TeslaClientException(e.toString());
+            }
         }
 
         return response;
     }
 
     private void requestAccessToken() throws IOException, InterruptedException {
-        System.out.println("!!! Getting new Access Token");
+        LOGGER.log(Level.INFO, "!!! Getting new Access Token");
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(BASE_URL + "/oauth/token"))
