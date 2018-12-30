@@ -52,6 +52,9 @@ public class TeslaClient {
 
         JSONObject jsonResponse = new JSONObject(stringHttpResponse.body());
 
+        // Add response info
+        jsonResponse.put("statusCode", stringHttpResponse.statusCode());
+
         return jsonResponse;
     }
 
