@@ -28,7 +28,6 @@ public class GraphiteClient implements AutoCloseable {
         try (GraphiteClient client = new GraphiteClient(hostname, data)) {
             client.flattenVehicleData().forEach((s, o) -> {
                 String statsdData = String.format("tesla.%s:%s|%s", s, o, "g");
-                System.out.println("statsdData = " + statsdData);
                 try {
                     client.sendStat(statsdData);
                     LOGGER.log(Level.FINER, statsdData);
