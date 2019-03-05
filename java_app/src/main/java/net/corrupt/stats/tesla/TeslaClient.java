@@ -20,6 +20,7 @@ public class TeslaClient {
 
     private HttpClient client;
     private String vehicleId;
+    private String energyId;
     private String username;
     private String password;
 
@@ -27,8 +28,9 @@ public class TeslaClient {
 
     private String accessToken;
 
-    public TeslaClient(final String vehicleId, final String username, final String password) {
+    public TeslaClient(final String vehicleId, final String energyId, final String username, final String password) {
         this.vehicleId = vehicleId;
+        this.energyId = energyId;
         this.username = username;
         this.password = password;
 
@@ -39,9 +41,21 @@ public class TeslaClient {
                 .build();
     }
 
+    public JSONObject getSolarData() throws TeslaClientException {
+        String energyDataUrl = String.format("%s/api/1/energy_sites/%s/live_status", BASE_URL, this.energyId);
+
+        return getApiData(energyDataUrl);
+    }
+
     public JSONObject getVehicleData() throws TeslaClientException {
+        String vehicleDataUrl = String.format("%s/api/1/vehicles/%s/data", BASE_URL, this.vehicleId);
+
+        return getApiData(vehicleDataUrl);
+    }
+
+    private JSONObject getApiData(String url) throws TeslaClientException {
         HttpRequest.Builder request = HttpRequest.newBuilder()
-                .uri(URI.create(String.format("%s/api/1/vehicles/%s/data", BASE_URL, this.vehicleId)))
+                .uri(URI.create(url))
                 .timeout(Duration.ofMinutes(2))
                 .header("Accept", "application/json")
                 .GET();

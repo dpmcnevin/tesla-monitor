@@ -52,9 +52,6 @@ services:
       - creds.env
     networks:
       - grafana-net
-    volumes:
-      - ./java_app:/var/app
-    command: mvn clean package exec:java -D exec.mainClass=net.corrupt.stats.Application
     depends_on:
       - graphite
 

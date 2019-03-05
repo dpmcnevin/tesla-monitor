@@ -14,18 +14,21 @@ public class Application {
 
     public static void main(String[] args) throws InterruptedException {
         String vehicleId = System.getenv("vehicle_id");
+        String energyId = System.getenv("energy_id");
         String username = System.getenv("tesla_username");
         String password = System.getenv("tesla_password");
         String graphiteHostname = "graphite";
 
-        TeslaClient teslaClient = new TeslaClient(vehicleId, username, password);
+        TeslaClient teslaClient = new TeslaClient(vehicleId, energyId, username, password);
 
         while(true) {
             JSONObject vehicleData = null;
+            JSONObject solarData = null;
 
             // Get data from the API
             try {
                 vehicleData = teslaClient.getVehicleData();
+                solarData = teslaClient.getSolarData();
             } catch (TeslaClientException e) {
                 LOGGER.log(Level.SEVERE, e.getMessage());
             }
@@ -33,6 +36,7 @@ public class Application {
             // Send the data to statsd
             try {
                 if (vehicleData != null) GraphiteClient.sendStats(graphiteHostname, vehicleData);
+                if (solarData != null) GraphiteClient.sendStats(graphiteHostname, solarData);
             } catch (GraphiteClientException e) {
                 LOGGER.log(Level.SEVERE, e.getMessage());
             }
